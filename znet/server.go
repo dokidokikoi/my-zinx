@@ -18,6 +18,9 @@ type Server struct {
 	IP string
 	// 服务绑定的端口
 	Port int
+	// 当前 Server 由用户绑定回调 router,
+	// 也就是 Server 注册的连接对应的处理业务
+	Router ziface.IRouter
 }
 
 func (s *Server) Start() {
@@ -51,7 +54,7 @@ func (s *Server) Start() {
 			conn, err := listener.AcceptTCP()
 			if err != nil {
 				fmt.Println("Accept err", err)
-				return
+				continue
 			}
 
 			// 3.2 TODO: 设置服务器最大连接控制，
@@ -59,7 +62,7 @@ func (s *Server) Start() {
 
 			// 3.3 处理该新连接请求的业务方法，
 			// 此时 handler 和 conn 应该是绑定的
-			dealConn := NewConnection(conn, cid, CallBackToClient)
+			dealConn := NewConnection(conn, cid, s.Router)
 			cid++
 
 			// 3.4 启动当前连接的处理业务
@@ -84,12 +87,19 @@ func (s *Server) Serve() {
 	select {}
 }
 
+func (s *Server) AddRouter(router ziface.IRouter) {
+	s.Router = router
+
+	fmt.Println("Add Router succ! ")
+}
+
 func NewServer(name string) ziface.IServer {
 	s := &Server{
 		Name:      name,
 		IPVersion: "tcp4",
 		IP:        "0.0.0.0",
 		Port:      7777,
+		Router:    nil,
 	}
 
 	return s
