@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/dokidokikoi/my-zinx/utils"
 	"github.com/dokidokikoi/my-zinx/ziface"
 )
 
@@ -51,7 +52,7 @@ func (c *Connection) StartReader() {
 
 	for {
 		// 将最大的数据读到 buf 中
-		buf := make([]byte, 512)
+		buf := make([]byte, utils.GlobalObject.MaxPacketSize)
 		_, err := c.Conn.Read(buf)
 		if err != nil {
 			fmt.Println("recv buf err ", err)

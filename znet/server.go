@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/dokidokikoi/my-zinx/utils"
 	"github.com/dokidokikoi/my-zinx/ziface"
 )
 
@@ -25,6 +26,8 @@ type Server struct {
 
 func (s *Server) Start() {
 	fmt.Printf("[START] Server listener at IP: %s, Port %d, is starting\n", s.IP, s.Port)
+	fmt.Printf("[ZINX] Version: %s, MaxConn: %d, MaxPacketSize: %d\n",
+		utils.GlobalObject.Version, utils.GlobalObject.MaxConn, utils.GlobalObject.MaxPacketSize)
 
 	// 开启一个 go 去做服务器的 listener 业务
 	go func() {
@@ -93,12 +96,14 @@ func (s *Server) AddRouter(router ziface.IRouter) {
 	fmt.Println("Add Router succ! ")
 }
 
-func NewServer(name string) ziface.IServer {
+func NewServer() ziface.IServer {
+	// 先初始化全局配置文件
+	utils.GlobalObject.Reload()
 	s := &Server{
-		Name:      name,
+		Name:      utils.GlobalObject.Name,
 		IPVersion: "tcp4",
-		IP:        "0.0.0.0",
-		Port:      7777,
+		IP:        utils.GlobalObject.Host,
+		Port:      utils.GlobalObject.TcpPort,
 		Router:    nil,
 	}
 
