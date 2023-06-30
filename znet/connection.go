@@ -1,10 +1,11 @@
 package znet
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"net"
 
-	"github.com/dokidokikoi/my-zinx/utils"
 	"github.com/dokidokikoi/my-zinx/ziface"
 )
 
@@ -51,18 +52,40 @@ func (c *Connection) StartReader() {
 	defer c.Stop()
 
 	for {
-		// 将最大的数据读到 buf 中
-		buf := make([]byte, utils.GlobalObject.MaxPacketSize)
-		_, err := c.Conn.Read(buf)
-		if err != nil {
-			fmt.Println("recv buf err ", err)
+		// 创建拆包对象
+		dp := NewDataPack()
+
+		// 读取客户端的 Msg Head
+		headData := make([]byte, dp.GetHeadLen())
+		if _, err := io.ReadFull(c.GetTCPConnection(), headData); err != nil {
+			fmt.Println("read msg head error ", err)
 			c.ExitBuffChan <- true
-			return
+			continue
 		}
+		// 拆包
+		msg, err := dp.Unpack(headData)
+		if err != nil {
+			fmt.Println("unpack error ", err)
+			c.ExitBuffChan <- true
+			continue
+		}
+
+		// 根据 dataLen 读取数据
+		var data []byte
+		if msg.GetDataLen() > 0 {
+			data = make([]byte, msg.GetDataLen())
+			if _, err := io.ReadFull(c.GetTCPConnection(), data); err != nil {
+				fmt.Println("read msg data error ", err)
+				c.ExitBuffChan <- true
+				continue
+			}
+		}
+		msg.SetData(data)
+
 		// 得到当前客户端请求的 Request 数据
 		req := Request{
 			conn: c,
-			data: buf,
+			msg:  msg,
 		}
 		// 从路由 Routers 中找到注册绑定 Conn 的对应 Handle
 		go func(request ziface.IRequest) {
@@ -98,6 +121,28 @@ func (c *Connection) GetConnID() uint32 {
 
 func (c *Connection) RemoteAddr() net.Addr {
 	return c.Conn.RemoteAddr()
+}
+
+func (c *Connection) SendMsg(msgID uint32, data []byte) error {
+	if c.isClosed {
+		return errors.New("Connection closed when send msg")
+	}
+	// 将 data 封包，并发送
+	dp := NewDataPack()
+	msg, err := dp.Pack(NewMessage(msgID, data))
+	if err != nil {
+		fmt.Println("pack error msg id = ", msgID)
+		return errors.New("Pack error msg")
+	}
+
+	// 写回客户端
+	if _, err := c.Conn.Write(msg); err != nil {
+		fmt.Println("Write msg id ", msgID, " error ")
+		c.ExitBuffChan <- true
+		return errors.New("conn Write error")
+	}
+
+	return nil
 }
 
 func NewConnection(conn *net.TCPConn, connID uint32, router ziface.IRouter) *Connection {

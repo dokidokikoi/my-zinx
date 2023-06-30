@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 
 	"github.com/dokidokikoi/my-zinx/ziface"
@@ -28,7 +29,8 @@ var GlobalObject *GlobalObj
 func (g *GlobalObj) Reload() {
 	data, err := ioutil.ReadFile("conf/zinx.json")
 	if err != nil {
-		panic(err)
+		fmt.Println("加载默认配置")
+		return
 	}
 
 	// 将 json 数据解析到 struct 中

@@ -14,6 +14,8 @@ type IConnection interface {
 	GetConnID() uint32
 	// 获取远程客户端地址信息
 	RemoteAddr() net.Addr
+	// 直接将 Message 数据发送给远程的 TCP 客户端
+	SendMsg(msgID uint32, data []byte) error
 }
 
 // 定义一个统一处理连接业务的接口

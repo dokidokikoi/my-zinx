@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/dokidokikoi/my-zinx/znet"
+	"io"
 	"net"
 	"time"
 )
@@ -18,20 +20,38 @@ func main() {
 	}
 
 	for {
-		_, err := conn.Write([]byte("hello"))
+		// 发封包消息
+		dp := znet.NewDataPack()
+		msg, _ := dp.Pack(znet.NewMessage(0, []byte("Zinx v0.5 Client Test Message")))
+		_, err := conn.Write(msg)
 		if err != nil {
 			fmt.Println("write error ", err)
 			return
 		}
 
-		buf := make([]byte, 512)
-		cnt, err := conn.Read(buf)
+		headData := make([]byte, dp.GetHeadLen())
+		_, err = io.ReadFull(conn, headData)
 		if err != nil {
-			fmt.Println("read buf error ")
+			fmt.Println("read head error ")
 			return
 		}
 
-		fmt.Printf("server call back: %s, cnt = %d\n", buf, cnt)
+		msgHead, err := dp.Unpack(headData)
+		if err != nil {
+			fmt.Println("unpack head error ")
+			return
+		}
+		data := make([]byte, msgHead.GetDataLen())
+		if msgHead.GetDataLen() > 0 {
+			_, err = io.ReadFull(conn, data)
+			if err != nil {
+				fmt.Println("unpack head error ")
+				return
+			}
+		}
+		msgHead.SetData(data)
+
+		fmt.Printf("server call back Msg ID: %d, data = %s\n", msgHead.GetMsgID(), msgHead.GetData())
 
 		time.Sleep(time.Second)
 	}
