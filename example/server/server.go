@@ -39,10 +39,25 @@ func (pr *PingRouter) Handle(request ziface.IRequest) {
 //	}
 //}
 
+type HelloZinxRouter struct {
+	znet.BaseRouter
+}
+
+func (hzr *HelloZinxRouter) Handle(request ziface.IRequest) {
+	fmt.Println("Call HelloZinxRouter Handle")
+	fmt.Printf("==> Recv Msg ID=%d, Data=%s\n", request.GetMsgID(), request.GetData())
+
+	err := request.GetConnection().SendMsg(1, []byte("Hello Zinx Router v0.6\n"))
+	if err != nil {
+		fmt.Println("call back ping ping ping error")
+	}
+}
+
 func main() {
 	s := znet.NewServer()
 
-	s.AddRouter(&PingRouter{})
+	s.AddRouter(0, &PingRouter{})
+	s.AddRouter(1, &HelloZinxRouter{})
 
 	s.Serve()
 }
