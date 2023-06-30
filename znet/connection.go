@@ -22,6 +22,9 @@ type Connection struct {
 
 	// 告知该连接已经退出/停止的 channel
 	ExitBuffChan chan bool
+
+	// 无缓冲管道，用于读、写两个 Goroutine 之间的数据通信
+	msgChan chan []byte
 }
 
 // 停止连接，结束当前连接状态 M
@@ -47,7 +50,7 @@ func (c *Connection) Stop() {
 
 // 处理 conn 读数据的 Gorutine
 func (c *Connection) StartReader() {
-	fmt.Println("Reader Goruntine is running")
+	fmt.Println("[Reader Goroutine is running]")
 	defer fmt.Println(c.Conn.RemoteAddr().String(), " conn reader exit!")
 	defer c.Stop()
 
@@ -94,8 +97,10 @@ func (c *Connection) StartReader() {
 
 // 启动连接，让当前连接开始工作
 func (c *Connection) Start() {
-	// 开启处理该连接读取客户端数据之后的请求业务
+	// 开启处理该连接读取客户端数据的 Goroutine
 	go c.StartReader()
+	// 开启用于写回客户端的数据流程的 Goroutine
+	go c.StartWriter()
 
 	for {
 		select {
@@ -131,13 +136,30 @@ func (c *Connection) SendMsg(msgID uint32, data []byte) error {
 	}
 
 	// 写回客户端
-	if _, err := c.Conn.Write(msg); err != nil {
-		fmt.Println("Write msg id ", msgID, " error ")
-		c.ExitBuffChan <- true
-		return errors.New("conn Write error")
-	}
+	// 将得到的数据发送到 chan，供 writer 读取
+	c.msgChan <- msg
 
 	return nil
+}
+
+// 读写分离，职责单一，在优化读或写逻辑时互不干扰
+func (c *Connection) StartWriter() {
+	fmt.Println("[Writer Goroutine is running]")
+	defer fmt.Println(c.RemoteAddr().String(), "[Conn Writer exit!]")
+
+	for {
+		select {
+		case data := <-c.msgChan:
+			// 有数据要写给客户端
+			if _, err := c.Conn.Write(data); err != nil {
+				fmt.Printf("Send Data error: %v, Conn Writer exit", err)
+				return
+			}
+		case <-c.ExitBuffChan:
+			// conn 已经关闭
+			return
+		}
+	}
 }
 
 func NewConnection(conn *net.TCPConn, connID uint32, msgHandler ziface.IMsgHandler) *Connection {
@@ -147,6 +169,7 @@ func NewConnection(conn *net.TCPConn, connID uint32, msgHandler ziface.IMsgHandl
 		MsgHandler:   msgHandler,
 		isClosed:     false,
 		ExitBuffChan: make(chan bool, 1),
+		msgChan:      make(chan []byte),
 	}
 
 	return c

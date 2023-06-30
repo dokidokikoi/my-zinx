@@ -1,7 +1,6 @@
 package znet
 
 import (
-	"errors"
 	"fmt"
 	"net"
 
@@ -108,13 +107,13 @@ func NewServer() ziface.IServer {
 }
 
 // 当前客户端连接的 handle API
-func CallBackToClient(conn *net.TCPConn, data []byte, cnt int) error {
-	// 回显业务
-	fmt.Println("[Conn Handle] CallBackToClient...")
-
-	if _, err := conn.Write(data[:cnt]); err != nil {
-		fmt.Println("write back buf err ", err)
-		return errors.New("CallBackToClient error")
-	}
-	return nil
-}
+//func CallBackToClient(conn *net.TCPConn, data []byte, cnt int) error {
+//	// 回显业务
+//	fmt.Println("[Conn Handle] CallBackToClient...")
+//
+//	if _, err := conn.Write(data[:cnt]); err != nil {
+//		fmt.Println("write back buf err ", err)
+//		return errors.New("CallBackToClient error")
+//	}
+//	return nil
+//}
