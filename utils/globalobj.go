@@ -21,6 +21,12 @@ type GlobalObj struct {
 	MaxPacketSize uint32
 	// 当前服务器主机允许的最大连接个数
 	MaxConn int
+	// 业务工作池的数量
+	WorkerPoolSize uint32
+	// 业务工作 worker 对应任务队列的最大任务存储数量
+	MaxWorkerTaskLen uint32
+
+	ConfFilePath string
 }
 
 var GlobalObject *GlobalObj
@@ -43,11 +49,14 @@ func (g *GlobalObj) Reload() {
 func init() {
 	// 初始化 GlobalObject 变量，设置一些默认值
 	GlobalObject = &GlobalObj{
-		Name:          "ZinxServerApp",
-		Version:       "v0.4",
-		TcpPort:       7777,
-		Host:          "0.0.0.0",
-		MaxPacketSize: 4096,
+		Name:             "ZinxServerApp",
+		Version:          "v0.4",
+		TcpPort:          7777,
+		Host:             "0.0.0.0",
+		MaxPacketSize:    4096,
+		ConfFilePath:     "conf/zinx.json",
+		WorkerPoolSize:   10,
+		MaxWorkerTaskLen: 1024,
 	}
 
 	// 从配置文件加载用户配置

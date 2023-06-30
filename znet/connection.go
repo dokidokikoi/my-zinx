@@ -3,6 +3,7 @@ package znet
 import (
 	"errors"
 	"fmt"
+	"github.com/dokidokikoi/my-zinx/utils"
 	"io"
 	"net"
 
@@ -90,8 +91,13 @@ func (c *Connection) StartReader() {
 			conn: c,
 			msg:  msg,
 		}
-		// 从绑定好的消息和对应的处理方法中执行对应的 Handle 方法
-		go c.MsgHandler.DoMsgHandler(&req)
+		if utils.GlobalObject.WorkerPoolSize > 0 {
+			// 已经启动 worker 工作池，将消息交给 worker
+			c.MsgHandler.SendMsg2TaskQueue(&req)
+		} else {
+			// 从绑定好的消息和对应的处理方法中执行对应的 Handle 方法
+			go c.MsgHandler.DoMsgHandler(&req)
+		}
 	}
 }
 
