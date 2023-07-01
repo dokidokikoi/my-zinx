@@ -25,6 +25,7 @@ type GlobalObj struct {
 	WorkerPoolSize uint32
 	// 业务工作 worker 对应任务队列的最大任务存储数量
 	MaxWorkerTaskLen uint32
+	MaxMsgChanLen    uint32
 
 	ConfFilePath string
 }
@@ -57,6 +58,8 @@ func init() {
 		ConfFilePath:     "conf/zinx.json",
 		WorkerPoolSize:   10,
 		MaxWorkerTaskLen: 1024,
+		MaxMsgChanLen:    10,
+		MaxConn:          10,
 	}
 
 	// 从配置文件加载用户配置

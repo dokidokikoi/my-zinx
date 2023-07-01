@@ -16,6 +16,15 @@ type IConnection interface {
 	RemoteAddr() net.Addr
 	// 直接将 Message 数据发送给远程的 TCP 客户端
 	SendMsg(msgID uint32, data []byte) error
+	// 直接将 Message 数据发送给远程的 TCP 客户端(带缓冲)
+	SendBuffMsg(msgID uint32, data []byte) error
+
+	// 设置连接属性
+	SetProperty(key string, value interface{})
+	// 获取连接属性
+	GetProperty(key string) (interface{}, error)
+	// 移除连接属性
+	RemoveProperty(key string)
 }
 
 // 定义一个统一处理连接业务的接口
