@@ -2,8 +2,11 @@ package utils
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
+	"github.com/dokidokikoi/my-zinx/utils/commandline/args"
 	"io/ioutil"
+	"os"
 
 	"github.com/dokidokikoi/my-zinx/ziface"
 )
@@ -32,9 +35,24 @@ type GlobalObj struct {
 
 var GlobalObject *GlobalObj
 
+func PathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, nil
+}
+
 // 加载用户的配置文件
 func (g *GlobalObj) Reload() {
-	data, err := ioutil.ReadFile("conf/zinx.json")
+	if confFileExists, _ := PathExists(g.ConfFilePath); !confFileExists {
+		fmt.Println("加载默认配置")
+		return
+	}
+	data, err := ioutil.ReadFile(GlobalObject.ConfFilePath)
 	if err != nil {
 		fmt.Println("加载默认配置")
 		return
@@ -48,18 +66,22 @@ func (g *GlobalObj) Reload() {
 }
 
 func init() {
+	// 初始化配置模块 flag
+	args.InitConfigFlag("./conf/zinx.json", "配置文件，如果没有设置，则默认为<exeDir>/conf/zinx.json")
+	flag.Parse()
+	args.FlagHandle()
 	// 初始化 GlobalObject 变量，设置一些默认值
 	GlobalObject = &GlobalObj{
 		Name:             "ZinxServerApp",
-		Version:          "v0.4",
+		Version:          "v0.10",
 		TcpPort:          7777,
 		Host:             "0.0.0.0",
 		MaxPacketSize:    4096,
-		ConfFilePath:     "conf/zinx.json",
+		ConfFilePath:     args.Args.ConfigFile,
 		WorkerPoolSize:   10,
 		MaxWorkerTaskLen: 1024,
-		MaxMsgChanLen:    10,
-		MaxConn:          10,
+		MaxMsgChanLen:    1024,
+		MaxConn:          12000,
 	}
 
 	// 从配置文件加载用户配置
