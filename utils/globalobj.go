@@ -31,6 +31,13 @@ type GlobalObj struct {
 	MaxMsgChanLen    uint32
 
 	ConfFilePath string
+
+	// 日志所在文件夹
+	LogDir string
+	// 日志文件名称，默认 ""
+	LogFile string
+	// 是否关闭 debug 日志级别调试信息，默认打开
+	LogDebugClose bool
 }
 
 var GlobalObject *GlobalObj
@@ -66,6 +73,11 @@ func (g *GlobalObj) Reload() {
 }
 
 func init() {
+	pwd, err := os.Getwd()
+	if err != nil {
+		pwd = "."
+	}
+
 	// 初始化配置模块 flag
 	args.InitConfigFlag("./conf/zinx.json", "配置文件，如果没有设置，则默认为<exeDir>/conf/zinx.json")
 	flag.Parse()
@@ -82,6 +94,9 @@ func init() {
 		MaxWorkerTaskLen: 1024,
 		MaxMsgChanLen:    1024,
 		MaxConn:          12000,
+		LogDir:           pwd + "/log",
+		LogFile:          "",
+		LogDebugClose:    false,
 	}
 
 	// 从配置文件加载用户配置

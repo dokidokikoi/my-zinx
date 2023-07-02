@@ -31,7 +31,7 @@ func (s *Server) Start() {
 	fmt.Printf("[START] Server listener at IP: %s, Port %d, is starting\n", s.IP, s.Port)
 	fmt.Printf("[ZINX] Version: %s, MaxConn: %d, MaxPacketSize: %d\n",
 		utils.GlobalObject.Version, utils.GlobalObject.MaxConn, utils.GlobalObject.MaxPacketSize)
-	fmt.Printf("%+v", utils.GlobalObject)
+
 	// 开启一个 go 去做服务器的 listener 业务
 	go func() {
 		// 启动 worker 工作池机制
