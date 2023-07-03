@@ -71,6 +71,6 @@ func (dp *DataPack) Unpack(binaryData []byte) (ziface.IMessage, error) {
 	return msg, nil
 }
 
-func NewDataPack() ziface.IDataPack {
+func NewDataPack() ziface.IPacket {
 	return &DataPack{}
 }

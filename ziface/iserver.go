@@ -21,4 +21,5 @@ type IServer interface {
 	CallOnConnStart(IConnection)
 	// 调用连接断开时的 hook 函数
 	CallOnConnStop(IConnection)
+	Packet() IPacket
 }

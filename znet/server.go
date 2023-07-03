@@ -25,12 +25,12 @@ type Server struct {
 
 	onConnStart func(conn ziface.IConnection)
 	onConnStop  func(conn ziface.IConnection)
+
+	packet ziface.IPacket
 }
 
 func (s *Server) Start() {
 	fmt.Printf("[START] Server listener at IP: %s, Port %d, is starting\n", s.IP, s.Port)
-	fmt.Printf("[ZINX] Version: %s, MaxConn: %d, MaxPacketSize: %d\n",
-		utils.GlobalObject.Version, utils.GlobalObject.MaxConn, utils.GlobalObject.MaxPacketSize)
 
 	// 开启一个 go 去做服务器的 listener 业务
 	go func() {
@@ -130,7 +130,11 @@ func (s *Server) CallOnConnStop(conn ziface.IConnection) {
 	}
 }
 
-func NewServer() ziface.IServer {
+func (s *Server) Packet() ziface.IPacket {
+	return s.packet
+}
+
+func NewServer(opts ...Option) ziface.IServer {
 	// 先初始化全局配置文件
 	utils.GlobalObject.Reload()
 	s := &Server{
@@ -140,19 +144,11 @@ func NewServer() ziface.IServer {
 		Port:       utils.GlobalObject.TcpPort,
 		msgHandler: NewMsgHandler(),
 		ConnMgr:    NewConnManager(),
+		packet:     NewDataPack(),
 	}
 
+	for _, opt := range opts {
+		opt(s)
+	}
 	return s
 }
-
-// 当前客户端连接的 handle API
-//func CallBackToClient(conn *net.TCPConn, data []byte, cnt int) error {
-//	// 回显业务
-//	fmt.Println("[Conn Handle] CallBackToClient...")
-//
-//	if _, err := conn.Write(data[:cnt]); err != nil {
-//		fmt.Println("write back buf err ", err)
-//		return errors.New("CallBackToClient error")
-//	}
-//	return nil
-//}
